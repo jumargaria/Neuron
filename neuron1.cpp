@@ -12,14 +12,19 @@
 #include <cmath>
 #include <string>
 #include "constants.hpp"
+#include <cassert>
  
 
 //Constructors
-Neuron:: Neuron():MembranePotential_(0),NbSpikes_(0),TimeSpikes_(0),refractory_(false), RefractionTime_(0){}
-Neuron:: Neuron(double MembranePotential,int NbSpikes,double TimeSpikes,bool refractory, double RefractionTime):
-MembranePotential_(MembranePotential),NbSpikes_(NbSpikes),TimeSpikes_(TimeSpikes),
-refractory_(refractory),RefractionTime_(RefractionTime){}
+Neuron:: Neuron():MembranePotential_(0.0),NbSpikes_(0.0),TimeSpikes_(0.0),refractory_(false), RefractoryStep_(0.0),tsim_(0.0),Iext_(0.0) {}
 
+
+void Neuron:: setI_ext(double I){
+    Iext_=I;
+}
+
+long Neuron:: getTimeSpike()const{ return TimeSpikes_;}
+double Neuron:: getMembranePotential()const{return MembranePotential_;}
 
 std::string Neuron::double_to_string(double c)const{
 
@@ -29,47 +34,40 @@ std::string str = ss.str();
     return str;
 }
 
-void Neuron:: update(double h, double tstart, double tstop, double Iext,double a, double b){
-    
-    std::ofstream sortie("membrane_potential.txt", std::ios::out|std::ios::app);
-    
-    double Input_current;
-    double tsim(tstart);
+bool Neuron:: update(long steps){
+    bool spike=false;
 
+    if(steps<=0) return false;
     
-    while(tsim<tstop){
-		   
-        if((tsim>=a) and (tsim<=b)){
-            Input_current = Iext;
-        }else{
-            Input_current = 0.0;
-         }
+    const long t_stop =tsim_+steps;
+    
+    while(tsim_<t_stop){
+        
         
         if(refractory_){
             MembranePotential_= 0.0;
-            RefractionTime_+=h;
+            ++RefractoryStep_;
             
-             if(RefractionTime_ > TAU) {
-               RefractionTime_=0;
+             if(RefractoryStep_ > REF_STEPS) {
+               RefractoryStep_=0;
                refractory_=false;
             }
             
         }else if(MembranePotential_>THRESHOLD){
-			//TAU est une constante qui correspond au temps ou neurone est refractory
-            TimeSpikes_= tsim;
+            
+            ++NbSpikes_;
+            TimeSpikes_= tsim_;
             refractory_= true;
+            spike=true;
+           
         }
         
-     sortie<<double_to_string( MembranePotential_)<<std::endl;
         
-     MembranePotential_= exp(-h/TAU)* MembranePotential_+ Iext*RESISTANCE*(1-exp(-h/TAU));
-
+     MembranePotential_= exp(-h/TAU)* MembranePotential_+ Iext_*RESISTANCE*(1-exp(-h/TAU));
+      ++tsim_;
         
     }
-    
-    tsim+=h;
-    
-    sortie.close();
+    return spike;
     
 }
 

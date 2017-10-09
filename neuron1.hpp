@@ -12,15 +12,18 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <cassert>
 
 class Neuron{
     public:
 //====================Constructors---Destructors==================
     Neuron();
-    Neuron(double MembranePotential,int NbSpikes,double TimeSpikes,bool refractory, double RefractionTime);
     ~Neuron(){};
 //====================Update================== 
-    void update(double h,double tstart, double tstop, double Iext,double a, double b);
+    bool update(long steps);
+    void setI_ext(double I);
+    long getTimeSpike()const;
+    double getMembranePotential()const;
 //====================Convertor==================  
     std::string double_to_string(double c)const;
     
@@ -28,10 +31,12 @@ class Neuron{
     
 //====================Attributs==================
     double MembranePotential_;
-    int NbSpikes_;
-    double TimeSpikes_;
+    long NbSpikes_;
+    long TimeSpikes_;
     bool refractory_;
-    double RefractionTime_;
+    double RefractoryStep_;
+    long tsim_;
+    double Iext_;
     
     
 
